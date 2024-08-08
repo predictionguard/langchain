@@ -17,17 +17,17 @@ from langchain_community.llms import PredictionGuard
 
 You can provide the name of the Prediction Guard model as an argument when initializing the LLM:
 ```python
-pgllm = PredictionGuard(model="MPT-7B-Instruct")
+pgllm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B")
 ```
 
 You can also provide your API key directly as an argument:
 ```python
-pgllm = PredictionGuard(model="MPT-7B-Instruct", predictionguard_api_key="<your API key>")
+pgllm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B", predictionguard_api_key="<your Prediction Guard API key>")
 ```
 
 Finally, you can provide an "output" argument that is used to structure/ control the output of the LLM:
 ```python
-pgllm = PredictionGuard(model="MPT-7B-Instruct", output={"type": "boolean"})
+pgllm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B")
 ```
 
 ## Example usage
@@ -60,17 +60,8 @@ prompt = PromptTemplate.from_template(template)
 
 # With "guarding" or controlling the output of the LLM. See the 
 # Prediction Guard docs (https://docs.predictionguard.com) to learn how to 
-# control the output with integer, float, boolean, JSON, and other types and
-# structures.
-pgllm = PredictionGuard(model="MPT-7B-Instruct", 
-                        output={
-                                "type": "categorical",
-                                "categories": [
-                                    "product announcement", 
-                                    "apology", 
-                                    "relational"
-                                    ]
-                                })
+# control the output with factuality and toxicity.
+pgllm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B")
 pgllm(prompt.format(query="What kind of post is this?"))
 ```
 
@@ -85,7 +76,7 @@ from langchain_community.llms import PredictionGuard
 # Your Prediction Guard API key. Get one at predictionguard.com
 os.environ["PREDICTIONGUARD_API_KEY"] = "<your Prediction Guard API key>"
 
-pgllm = PredictionGuard(model="OpenAI-gpt-3.5-turbo-instruct")
+pgllm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B")
 
 template = """Question: {question}
 
