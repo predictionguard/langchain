@@ -50,5 +50,9 @@ def test_predictionguard_stream() -> None:
 
     messages = [("system", "You are a helpful chatbot."), ("human", "Tell me a joke.")]
 
+    num_chunks = 0
     for chunk in chat.stream(messages):
         assert isinstance(chunk.content, str)
+        num_chunks += 1
+
+    assert num_chunks > 0
