@@ -3,11 +3,15 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from pydantic import ConfigDict
 from langchain_core.pydantic_v1 import BaseModel, SecretStr
-from langchain_core.utils import get_from_dict_or_env, pre_init
-
+from langchain_core.utils import get_from_dict_or_env,
+from langchain_core.utils import (
+    convert_to_secret_str,
+    get_from_dict_or_env,
+    pre_init,
+)
 from langchain_community.llms.utils import enforce_stop_tokens
+from pydantic import ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +88,12 @@ class PredictionGuard(LLM):
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the api_key and python package exists in environment."""
-        values["predictionguard_api_key"] = get_from_dict_or_env(
-            values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
+        values["predictionguard_api_key"] = convert_to_secret_str(
+            get_from_dict_or_env(
+                values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
+            )
         )
+
         try:
             from predictionguard import PredictionGuard
 
@@ -103,7 +110,6 @@ class PredictionGuard(LLM):
         values["client"] = client
         return values
 
-
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
@@ -115,19 +121,18 @@ class PredictionGuard(LLM):
         return "predictionguard"
 
     def _get_parameters(self, **kwargs) -> Dict[str, Any]:
+        # input kwarg conflicts with LanguageModelInput on BaseChatModel
+        input = kwargs.pop("predictionguard_input", self.predictionguard_input)
+        output = kwargs.pop("predictionguard_output", self.predictionguard_output)
+
         params = {
             **{
                 "max_tokens": self.max_tokens,
                 "temperature": self.temperature,
                 "top_p": self.top_p,
                 "top_k": self.top_k,
-                "input": self.predictionguard_input,
-                "output": self.predictionguard_output,
-            },
-            **{
-                # input kwarg conflicts with LanguageModelInput on BaseChatModel
-                "input": kwargs.pop("predictionguard_input", None),
-                "output": kwargs.pop("predictionguard_output", None),
+                "input": input.dict() if isinstance(input, BaseModel) else input,
+                "output": output.dict() if isinstance(output, BaseModel) else output,
             },
             **kwargs,
         }
@@ -166,6 +171,12 @@ class PredictionGuard(LLM):
             prompt=prompt,
             **params,
         )
+
+        for res in response["choices"]:
+            if res.get("status", "").startswith("error: "):
+                err_msg = res["status"].removeprefix("error: ")
+                raise ValueError(f"Error from PredictionGuard API: {err_msg}")
+
         text = response["choices"][0]["text"]
 
         # If stop tokens are provided, Prediction Guard's endpoint returns them.

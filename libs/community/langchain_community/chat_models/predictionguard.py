@@ -6,18 +6,12 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
-    ChatMessageChunk,
-    FunctionMessageChunk,
-    HumanMessageChunk,
-    SystemMessageChunk,
-    ToolMessageChunk,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
 from langchain_core.utils import (
     convert_to_secret_str,
-    get_from_dict_or_env, 
+    get_from_dict_or_env,
 )
 
 from langchain_community.adapters.openai import (
@@ -92,7 +86,6 @@ class ChatPredictionGuard(BaseChatModel):
     predictionguard_output: Optional[CompletionOutput] = None
     """The output check to run the LLM output against."""
 
-
     class Config:
         """Configuration for this pydantic object."""
 
@@ -106,7 +99,9 @@ class ChatPredictionGuard(BaseChatModel):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         values["predictionguard_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY")
+            get_from_dict_or_env(
+                values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
+            )
         )
 
         try:
@@ -126,19 +121,18 @@ class ChatPredictionGuard(BaseChatModel):
         return values
 
     def _get_parameters(self, **kwargs) -> Dict[str, Any]:
+        # input kwarg conflicts with LanguageModelInput on BaseChatModel
+        input = kwargs.pop("predictionguard_input", self.predictionguard_input)
+        output = kwargs.pop("predictionguard_output", self.predictionguard_output)
+
         params = {
             **{
                 "max_tokens": self.max_tokens,
                 "temperature": self.temperature,
                 "top_p": self.top_p,
                 "top_k": self.top_k,
-                "input": self.predictionguard_input,
-                "output": self.predictionguard_output,
-            },
-            **{
-                # input kwarg conflicts with LanguageModelInput on BaseChatModel
-                "input": kwargs.pop("predictionguard_input", None),
-                "output": kwargs.pop("predictionguard_output", None),
+                "input": input.dict() if isinstance(input, BaseModel) else input,
+                "output": output.dict() if isinstance(output, BaseModel) else output,
             },
             **kwargs,
         }
@@ -201,5 +195,4 @@ class ChatPredictionGuard(BaseChatModel):
             gen = ChatGeneration(message=message)
             generations.append(gen)
 
-        breakpoint()
         return ChatResult(generations=generations)

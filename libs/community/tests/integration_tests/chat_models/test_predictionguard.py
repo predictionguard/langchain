@@ -1,15 +1,14 @@
 """Test Prediction Guard API wrapper"""
 
+import pytest
 
 from langchain_community.chat_models.predictionguard import ChatPredictionGuard
 
 
 def test_predictionguard_call() -> None:
     """Test a valid call to Prediction Guard."""
-    llm = ChatPredictionGuard(
-        model="Hermes-2-Pro-Llama-3-8B",
-        max_tokens=100,
-        temperature=1.0
+    chat = ChatPredictionGuard(
+        model="Hermes-2-Pro-Llama-3-8B", max_tokens=100, temperature=1.0
     )
 
     messages = [
@@ -17,31 +16,39 @@ def test_predictionguard_call() -> None:
             "system",
             "You are a helpful chatbot",
         ),
-        ("human", "Tell me a joke.")
+        ("human", "Tell me a joke."),
     ]
 
-    output = llm.invoke(messages)
-    assert isinstance(output, str)
+    output = chat.invoke(messages)
+    assert isinstance(output.content, str)
+
+
+def test_predictionguard_pii() -> None:
+    chat = ChatPredictionGuard(
+        model="Hermes-2-Pro-Llama-3-8B",
+        predictionguard_input={
+            "pii": "block",
+        },
+        max_tokens=100,
+        temperature=1.0,
+    )
+
+    messages = [
+        "Hello, my name is John Doe and my SSN is 111-22-3333",
+    ]
+
+    with pytest.raises(ValueError, match=r"personal identifiable information detected"):
+        chat.invoke(messages)
 
 
 def test_predictionguard_stream() -> None:
     """Test a valid call with streaming to Prediction Guard"""
-    llm = ChatPredictionGuard(
+
+    chat = ChatPredictionGuard(
         model="Hermes-2-Pro-Llama-3-8B",
-        stream=True
     )
 
-    messages = [
-        (
-            "system",
-            "You are a helpful chatbot."
-        ),
-        ("human", "Tell me a joke.")
-    ]
+    messages = [("system", "You are a helpful chatbot."), ("human", "Tell me a joke.")]
 
-    test_iter = 0
-    for out in llm.stream(messages):
-        if test_iter == 2:
-            break
-        assert isinstance(out, str)
-        test_iter += 1
+    for chunk in chat.stream(messages):
+        assert isinstance(chunk.content, str)
