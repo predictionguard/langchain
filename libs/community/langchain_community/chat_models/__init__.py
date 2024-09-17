@@ -144,6 +144,9 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.premai import (
         ChatPremAI,
     )
+    from langchain_community.chat_models.predictionguard import (
+        ChatPredictionGuard,
+    )
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
     )

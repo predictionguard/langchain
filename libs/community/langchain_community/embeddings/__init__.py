@@ -182,6 +182,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.ovhcloud import (
         OVHCloudEmbeddings,
     )
+    from langchain_community.embeddings.predictionguard import (
+        PredictionGuardEmbeddings,
+    )
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
     )

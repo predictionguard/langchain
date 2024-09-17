@@ -15,27 +15,26 @@ class PredictionGuard(LLM):
     """Prediction Guard large language models.
 
     To use, you should have the ``predictionguard`` python package installed, and the
-    environment variable ``PREDICTIONGUARD_TOKEN`` set with your access token, or pass
-    it as a named parameter to the constructor. To use Prediction Guard's API along
-    with OpenAI models, set the environment variable ``OPENAI_API_KEY`` with your
-    OpenAI API key as well.
+    environment variable ``PREDICTIONGUARD_API_KEY`` set with your api_key, or pass
+    it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            pgllm = PredictionGuard(model="MPT-7B-Instruct",
-                                    token="my-access-token",
-                                    output={
-                                        "type": "boolean"
-                                    })
+            pgllm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B",
+                                    api_key="my-api-key"
+                                    )
     """
 
-    client: Any = None  #: :meta private:
-    model: Optional[str] = "MPT-7B-Instruct"
+    client: Any  #: :meta private:
+    model: Optional[str] = "Hermes-2-Pro-Llama-3-8B"
     """Model name to use."""
 
+    input: Optional[Dict[str, Any]] = None
+    """The input check to run over the prompt before sending to the LLM."""
+
     output: Optional[Dict[str, Any]] = None
-    """The output type or structure for controlling the LLM output."""
+    """The output check to run the LLM output against."""
 
     max_tokens: int = 256
     """Denotes the number of tokens to predict per generation."""
@@ -43,8 +42,11 @@ class PredictionGuard(LLM):
     temperature: float = 0.75
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    token: Optional[str] = None
-    """Your Prediction Guard access token."""
+    top_p: float = 0.1
+    """A non-negative float that controls the diversity of the generated tokens."""
+
+    api_key: Optional[str] = None
+    """Your Prediction Guard api_key."""
 
     stop: Optional[List[str]] = None
 
@@ -54,12 +56,16 @@ class PredictionGuard(LLM):
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that the access token and python package exists in environment."""
-        token = get_from_dict_or_env(values, "token", "PREDICTIONGUARD_TOKEN")
+        """Validate that the api_key and python package exists in environment."""
+        api_key = get_from_dict_or_env(values, "api_key", "PREDICTIONGUARD_API_KEY")
         try:
-            import predictionguard as pg
+            from predictionguard import PredictionGuard
 
-            values["client"] = pg.Client(token=token)
+            client = PredictionGuard(
+                api_key=api_key
+            )
+
+            values["client"] = client
         except ImportError:
             raise ImportError(
                 "Could not import predictionguard python package. "
@@ -73,6 +79,7 @@ class PredictionGuard(LLM):
         return {
             "max_tokens": self.max_tokens,
             "temperature": self.temperature,
+            "top_p": self.top_p
         }
 
     @property
@@ -101,7 +108,9 @@ class PredictionGuard(LLM):
             .. code-block:: python
                 response = pgllm.invoke("Tell me a joke.")
         """
-        import predictionguard as pg
+        from predictionguard import PredictionGuard
+
+        client = PredictionGuard()
 
         params = self._default_params
         if self.stop is not None and stop is not None:
@@ -111,12 +120,14 @@ class PredictionGuard(LLM):
         else:
             params["stop_sequences"] = stop
 
-        response = pg.Completion.create(
+        response = client.completions.create(
             model=self.model,
             prompt=prompt,
+            input=self.input,
             output=self.output,
             temperature=params["temperature"],
             max_tokens=params["max_tokens"],
+            top_p=params["top_p"]
             **kwargs,
         )
         text = response["choices"][0]["text"]
