@@ -141,11 +141,11 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.perplexity import (
         ChatPerplexity,
     )
-    from langchain_community.chat_models.premai import (
-        ChatPremAI,
-    )
     from langchain_community.chat_models.predictionguard import (
         ChatPredictionGuard,
+    )
+    from langchain_community.chat_models.premai import (
+        ChatPremAI,
     )
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
@@ -213,6 +213,7 @@ __all__ = [
     "ChatOllama",
     "ChatOpenAI",
     "ChatPerplexity",
+    "ChatPredictionGuard",
     "ChatPremAI",
     "ChatSparkLLM",
     "ChatSnowflakeCortex",
@@ -296,6 +297,7 @@ _module_lookup = {
     "ChatPremAI": "langchain_community.chat_models.premai",
     "ChatLlamaCpp": "langchain_community.chat_models.llamacpp",
     "ChatYi": "langchain_community.chat_models.yi",
+    "ChatPredictionGuard": "langchain_community.chat_models.predictionguard",
 }
 
 

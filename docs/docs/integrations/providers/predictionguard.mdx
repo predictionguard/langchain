@@ -4,8 +4,9 @@ This page covers how to use the Prediction Guard ecosystem within LangChain.
 It is broken into two parts: installation and setup, and then references to specific Prediction Guard wrappers.
 
 ## Installation and Setup
+
 - Install the Python SDK with `pip install predictionguard`
-- Get a Prediction Guard access token (as described [here](https://docs.predictionguard.com/)) and set it as an environment variable (`PREDICTIONGUARD_API_KEY`)
+- Get a Prediction Guard API key (as described [here](https://docs.predictionguard.com/)) and set it as an environment variable (`PREDICTIONGUARD_API_KEY`)
 
 ## LLM Wrapper
 
@@ -19,9 +20,9 @@ You can provide the name of the Prediction Guard model as an argument when initi
 pgllm = PredictionGuard(model="MPT-7B-Instruct")
 ```
 
-You can also provide your access token directly as an argument:
+You can also provide your API key directly as an argument:
 ```python
-pgllm = PredictionGuard(model="MPT-7B-Instruct", token="<your access token>")
+pgllm = PredictionGuard(model="MPT-7B-Instruct", predictionguard_api_key="<your API key>")
 ```
 
 Finally, you can provide an "output" argument that is used to structure/ control the output of the LLM:
@@ -41,7 +42,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # Your Prediction Guard API key. Get one at predictionguard.com
-os.environ["PREDICTIONGUARD_TOKEN"] = "<your Prediction Guard access token>"
+os.environ["PREDICTIONGUARD_API_KEY"] = "<your API key>"
 
 # Define a prompt template
 template = """Respond to the following query based on the context.
@@ -81,12 +82,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_community.llms import PredictionGuard
 
-# Optional, add your OpenAI API Key. This is optional, as Prediction Guard allows
-# you to access all the latest open access models (see https://docs.predictionguard.com)
-os.environ["OPENAI_API_KEY"] = "<your OpenAI api key>"
-
 # Your Prediction Guard API key. Get one at predictionguard.com
-os.environ["PREDICTIONGUARD_TOKEN"] = "<your Prediction Guard access token>"
+os.environ["PREDICTIONGUARD_API_KEY"] = "<your Prediction Guard API key>"
 
 pgllm = PredictionGuard(model="OpenAI-gpt-3.5-turbo-instruct")
 

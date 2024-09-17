@@ -3,94 +3,136 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.utils import get_from_dict_or_env, pre_init
 from pydantic import ConfigDict
+from langchain_core.pydantic_v1 import BaseModel, SecretStr
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
 from langchain_community.llms.utils import enforce_stop_tokens
 
 logger = logging.getLogger(__name__)
 
 
+class CompletionInput(BaseModel):
+    """Options to affect the input of the request."""
+
+    block_prompt_injection: Optional[bool] = None
+    """Set to true to detect prompt injection attacks."""
+    pii: Optional[str] = None
+    """Set to either 'block' or 'replace'."""
+    pii_replace_method: Optional[str]
+    """Set to either 'random', 'fake', 'category', 'mask'."""
+
+
+class CompletionOutput(BaseModel):
+    """Options to affect the output of the response."""
+
+    factuality: Optional[bool] = None
+    """Set to true to turn on factuality processing."""
+    toxicity: Optional[bool] = None
+    """Set to true to turn on toxicity processing."""
+
+
 class PredictionGuard(LLM):
     """Prediction Guard large language models.
 
     To use, you should have the ``predictionguard`` python package installed, and the
-    environment variable ``PREDICTIONGUARD_API_KEY`` set with your api_key, or pass
+    environment variable ``PREDICTIONGUARD_API_KEY`` set with your API key, or pass
     it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
 
-            pgllm = PredictionGuard(model="Hermes-2-Pro-Llama-3-8B",
-                                    api_key="my-api-key"
-                                    )
+            llm = PredictionGuard(
+                model="Hermes-2-Pro-Llama-3-8B",
+                predictionguard_api_key="your Prediction Guard API key",
+            )
     """
 
     client: Any  #: :meta private:
+
+    predictionguard_api_key: Optional[SecretStr] = None
+    """Your Prediction Guard API key."""
+
     model: Optional[str] = "Hermes-2-Pro-Llama-3-8B"
     """Model name to use."""
 
-    input: Optional[Dict[str, Any]] = None
-    """The input check to run over the prompt before sending to the LLM."""
-
-    output: Optional[Dict[str, Any]] = None
-    """The output check to run the LLM output against."""
-
-    max_tokens: int = 256
+    max_tokens: Optional[int] = 256
     """Denotes the number of tokens to predict per generation."""
 
-    temperature: float = 0.75
+    temperature: Optional[float] = 0.75
     """A non-negative float that tunes the degree of randomness in generation."""
 
-    top_p: float = 0.1
+    top_p: Optional[float] = 0.1
     """A non-negative float that controls the diversity of the generated tokens."""
 
-    api_key: Optional[str] = None
-    """Your Prediction Guard api_key."""
+    top_k: Optional[int] = None
+    """The diversity of the generated text based on top-k sampling."""
 
     stop: Optional[List[str]] = None
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+    predictionguard_input: Optional[CompletionInput] = None
+    """The input check to run over the prompt before sending to the LLM."""
+
+    predictionguard_output: Optional[CompletionOutput] = None
+    """The output check to run the LLM output against."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    class Config:
+        """Configuration for this pydantic object."""
 
     @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the api_key and python package exists in environment."""
-        api_key = get_from_dict_or_env(values, "api_key", "PREDICTIONGUARD_API_KEY")
+        values["predictionguard_api_key"] = get_from_dict_or_env(
+            values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
+        )
         try:
             from predictionguard import PredictionGuard
 
-            client = PredictionGuard(
-                api_key=api_key
-            )
-
-            values["client"] = client
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "Could not import predictionguard python package. "
                 "Please install it with `pip install predictionguard`."
-            )
+            ) from e
+
+        client = PredictionGuard(
+            api_key=values["predictionguard_api_key"].get_secret_value(),
+        )
+
+        values["client"] = client
         return values
 
-    @property
-    def _default_params(self) -> Dict[str, Any]:
-        """Get the default parameters for calling the Prediction Guard API."""
-        return {
-            "max_tokens": self.max_tokens,
-            "temperature": self.temperature,
-            "top_p": self.top_p
-        }
 
     @property
     def _identifying_params(self) -> Dict[str, Any]:
         """Get the identifying parameters."""
-        return {**{"model": self.model}, **self._default_params}
+        return {"model": self.model}
 
     @property
     def _llm_type(self) -> str:
         """Return type of llm."""
         return "predictionguard"
+
+    def _get_parameters(self, **kwargs) -> Dict[str, Any]:
+        params = {
+            **{
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "top_p": self.top_p,
+                "top_k": self.top_k,
+                "input": self.predictionguard_input,
+                "output": self.predictionguard_output,
+            },
+            **{
+                # input kwarg conflicts with LanguageModelInput on BaseChatModel
+                "input": kwargs.pop("predictionguard_input", None),
+                "output": kwargs.pop("predictionguard_output", None),
+            },
+            **kwargs,
+        }
+
+        return params
 
     def _call(
         self,
@@ -106,35 +148,29 @@ class PredictionGuard(LLM):
             The string generated by the model.
         Example:
             .. code-block:: python
-                response = pgllm.invoke("Tell me a joke.")
+                response = llm.invoke("Tell me a joke.")
         """
-        from predictionguard import PredictionGuard
 
-        client = PredictionGuard()
+        params = self._get_parameters(**kwargs)
 
-        params = self._default_params
+        stops = None
         if self.stop is not None and stop is not None:
             raise ValueError("`stop` found in both the input and default params.")
         elif self.stop is not None:
-            params["stop_sequences"] = self.stop
+            stops = self.stop
         else:
-            params["stop_sequences"] = stop
+            stops = stop
 
-        response = client.completions.create(
+        response = self.client.completions.create(
             model=self.model,
             prompt=prompt,
-            input=self.input,
-            output=self.output,
-            temperature=params["temperature"],
-            max_tokens=params["max_tokens"],
-            top_p=params["top_p"]
-            **kwargs,
+            **params,
         )
         text = response["choices"][0]["text"]
 
         # If stop tokens are provided, Prediction Guard's endpoint returns them.
         # In order to make this consistent with other endpoints, we strip them.
-        if stop is not None or self.stop is not None:
-            text = enforce_stop_tokens(text, params["stop_sequences"])
+        if stops:
+            text = enforce_stop_tokens(text, stops)
 
         return text
