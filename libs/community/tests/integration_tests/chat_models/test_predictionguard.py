@@ -37,7 +37,7 @@ def test_predictionguard_pii() -> None:
         "Hello, my name is John Doe and my SSN is 111-22-3333",
     ]
 
-    with pytest.raises(ValueError, match=r"personal identifiable information detected"):
+    with pytest.raises(ValueError, match=r"Could not make prediction. pii detected"):
         chat.invoke(messages)
 
 

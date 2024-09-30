@@ -4,68 +4,71 @@ import base64
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.embeddings import Embeddings
-from langchain_core.pydantic_v1 import Extra, root_validator
-from langchain_core.utils import get_from_dict_or_env, convert_to_secret_str
+from langchain_core.utils import get_from_dict_or_env, pre_init
 
+from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
 
-class PredictionGuardEmbeddings(Embeddings):
+class PredictionGuardEmbeddings(BaseModel, Embeddings):
     """Prediction Guard chat models.
-    
+
     To use, you should have the ``predictionguard`` python package installed, and the
     environment variable ``PREDICTIONGUARD_API_KEY`` set with your api_key, or pass
     it as a named parameter to the constructor.
-    
+
     Example:
         .. code-block:: python
-        
+
             embeddings = PredictionGuardEmbeddings(
                                     model="bridgetower-large-itm-mlm-itc",
                                     api_key="my-api-key"
                                     )
     """
 
-    client: Any
+    client: Any #: :meta private:
+    """Prediction Guard Client"""
+
     model: Optional[str] = "bridgetower-large-itm-mlm-itc"
     """Model name to use."""
 
-    api_key: Optional[str] = None
-    """Your Prediction Guard api_key."""
+    predictionguard_api_key: Optional[str] = None
+    """Prediction Guard API key."""
 
+    model_config = ConfigDict(
+        extra="forbid",
+    )
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
-        """Validate that api key and python package exists in environment."""
-        values["predictionguard_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY")
+        """Validate that the api_key and python package exists in environment."""
+        pg_api_key = get_from_dict_or_env(
+                values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
         )
 
         try:
             from predictionguard import PredictionGuard
 
-        except ImportError as e:
+            values["client"] = PredictionGuard(
+                api_key=pg_api_key,
+            )
+
+        except ImportError:
             raise ImportError(
                 "Could not import predictionguard python package. "
-                "Please install it with `pip install predictionguard --upgrade`."
-            ) from e
+                "Please install it with `pip install predictionguard`."
+            )
 
-        client = PredictionGuard(
-            api_key=values["predictionguard_api_key"].get_secret_value(),
-        )
-
-        values["client"] = client
         return values
-    
 
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """Call out to Prediction Guard's embedding endpoint for embedding documents.
-        
+
         Args:
             texts:
                 List of dictionaries containing text inputs.
-            
+
         Returns:
             Embeddings for the texts.
         """
@@ -75,7 +78,6 @@ class PredictionGuardEmbeddings(Embeddings):
             input = {
                 "text": text
             }
-
             inputs.append(input)
 
         response = self.client.embeddings.create(
@@ -87,7 +89,7 @@ class PredictionGuardEmbeddings(Embeddings):
         indx = 0
         for re in response["data"]:
             if re["index"] == indx:
-                res.append()
+                res.append(re["embedding"])
                 indx += 1
             else:
                 continue
@@ -117,14 +119,14 @@ class PredictionGuardEmbeddings(Embeddings):
         )
 
         return response["data"][0]["embedding"]
-    
+
 
     def embed_images(self, images: List[str]) -> List[float]:
         """Call out to Prediction Guard's embedding endpoint for embedding multiple images.
-        
+
         Args:
             images: A list of images to embed. Supports image file paths, image URLs, data URIs, and base64 encoded images.
-            
+
         Returns:
             Embeddings for the images.
         """
@@ -146,7 +148,7 @@ class PredictionGuardEmbeddings(Embeddings):
         indx = 0
         for re in response["data"]:
             if re["index"] == indx:
-                res.append()
+                res.append(re["embedding"])
                 indx += 1
             else:
                 continue
@@ -156,10 +158,10 @@ class PredictionGuardEmbeddings(Embeddings):
 
     def embed_image_text(self, inputs: List[Dict[str, str]]) -> List[float]:
         """Call out to Prediction Guard's embedding endpoint for embedding an image and text.
-        
+
         Args:
             inputs: A list of dictionaries containing the text and images to embed.
-            
+
         Returns:
             Embeddings for the text and images.
         """
@@ -173,15 +175,9 @@ class PredictionGuardEmbeddings(Embeddings):
         indx = 0
         for re in response["data"]:
             if re["index"] == indx:
-                res.append()
+                res.append(re["embedding"])
                 indx += 1
             else:
                 continue
 
         return res
-
-
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid

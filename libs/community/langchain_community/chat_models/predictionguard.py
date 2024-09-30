@@ -8,17 +8,14 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Extra, SecretStr, root_validator
-from langchain_core.utils import (
-    convert_to_secret_str,
-    get_from_dict_or_env,
-)
-
+from langchain_core.pydantic_v1 import BaseModel, Extra
+from langchain_core.utils import get_from_dict_or_env, pre_init
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
 
+from pydantic import BaseModel, Extra
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +26,7 @@ class CompletionInput(BaseModel):
     """Set to true to detect prompt injection attacks."""
     pii: Optional[str] = None
     """Set to either 'block' or 'replace'."""
-    pii_replace_method: Optional[str]
+    pii_replace_method: Optional[str] = None
     """Set to either 'random', 'fake', 'category', 'mask'."""
 
 
@@ -60,9 +57,6 @@ class ChatPredictionGuard(BaseChatModel):
 
     client: Any
 
-    predictionguard_api_key: Optional[SecretStr] = None
-    """Your Prediction Guard API key."""
-
     model: Optional[str] = "Hermes-2-Pro-Llama-3-8B"
     """Model name to use."""
 
@@ -86,6 +80,9 @@ class ChatPredictionGuard(BaseChatModel):
     predictionguard_output: Optional[CompletionOutput] = None
     """The output check to run the LLM output against."""
 
+    predictionguard_api_key: Optional[str] = None
+    """Prediction Guard API key."""
+
     class Config:
         """Configuration for this pydantic object."""
 
@@ -95,29 +92,26 @@ class ChatPredictionGuard(BaseChatModel):
     def _llm_type(self) -> str:
         return "predictionguard-chat"
 
-    @root_validator()
+    @pre_init
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
-        values["predictionguard_api_key"] = convert_to_secret_str(
-            get_from_dict_or_env(
+        pg_api_key = get_from_dict_or_env(
                 values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
-            )
         )
 
         try:
             from predictionguard import PredictionGuard
 
-        except ImportError as e:
+            values["client"] = PredictionGuard(
+                api_key=pg_api_key,
+            )
+
+        except ImportError:
             raise ImportError(
                 "Could not import predictionguard python package. "
                 "Please install it with `pip install predictionguard --upgrade`."
-            ) from e
+            )
 
-        client = PredictionGuard(
-            api_key=values["predictionguard_api_key"].get_secret_value(),
-        )
-
-        values["client"] = client
         return values
 
     def _get_parameters(self, **kwargs) -> Dict[str, Any]:
