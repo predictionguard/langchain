@@ -3,9 +3,10 @@ from typing import Any, Dict, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
+
 from langchain_community.llms.utils import enforce_stop_tokens
-from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ class PredictionGuard(LLM):
 
     model_config = ConfigDict(extra="forbid")
 
-    @pre_init
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the api_key and python package exists in environment."""
         pg_api_key = get_from_dict_or_env(
@@ -119,8 +120,8 @@ class PredictionGuard(LLM):
                 "temperature": self.temperature,
                 "top_p": self.top_p,
                 "top_k": self.top_k,
-                "input": input.dict() if isinstance(input, BaseModel) else input,
-                "output": output.dict() if isinstance(output, BaseModel) else output,
+                "input": input.model_dump() if isinstance(input, BaseModel) else input,
+                "output": output.model_dump() if isinstance(output, BaseModel) else output,
             },
             **kwargs,
         }

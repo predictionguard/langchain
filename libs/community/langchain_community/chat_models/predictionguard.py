@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Iterator
+from typing import Any, Dict, Iterator, List, Optional
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -8,14 +8,14 @@ from langchain_core.messages import (
     BaseMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.pydantic_v1 import BaseModel, Extra
-from langchain_core.utils import get_from_dict_or_env, pre_init
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
+
 from langchain_community.adapters.openai import (
     convert_dict_to_message,
     convert_message_to_dict,
 )
 
-from pydantic import BaseModel, Extra
 logger = logging.getLogger(__name__)
 
 
@@ -42,9 +42,9 @@ class CompletionOutput(BaseModel):
 class ChatPredictionGuard(BaseChatModel):
     """Prediction Guard chat models.
 
-    To use, you should have the ``predictionguard`` python package installed, and the
-    environment variable ``PREDICTIONGUARD_API_KEY`` set with your API key, or pass
-    it as a named parameter to the constructor.
+    To use, you should have the ``predictionguard`` python package installed,
+    and the environment variable ``PREDICTIONGUARD_API_KEY`` set with your API key,
+    or pass it as a named parameter to the constructor.
 
     Example:
         .. code-block:: python
@@ -83,16 +83,13 @@ class ChatPredictionGuard(BaseChatModel):
     predictionguard_api_key: Optional[str] = None
     """Prediction Guard API key."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
+    model_config = ConfigDict(extra="forbid")
 
     @property
     def _llm_type(self) -> str:
         return "predictionguard-chat"
 
-    @pre_init
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that api key and python package exists in environment."""
         pg_api_key = get_from_dict_or_env(
@@ -125,8 +122,8 @@ class ChatPredictionGuard(BaseChatModel):
                 "temperature": self.temperature,
                 "top_p": self.top_p,
                 "top_k": self.top_k,
-                "input": input.dict() if isinstance(input, BaseModel) else input,
-                "output": output.dict() if isinstance(output, BaseModel) else output,
+                "input": input.model_dump() if isinstance(input, BaseModel) else input,
+                "output": output.model_dump() if isinstance(output, BaseModel) else output,
             },
             **kwargs,
         }

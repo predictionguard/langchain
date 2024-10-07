@@ -1,12 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional
-import base64
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env, pre_init
-
-from pydantic import BaseModel, ConfigDict
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import BaseModel, ConfigDict, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +37,7 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
         extra="forbid",
     )
 
-    @pre_init
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the api_key and python package exists in environment."""
         pg_api_key = get_from_dict_or_env(
@@ -122,10 +119,12 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
 
 
     def embed_images(self, images: List[str]) -> List[float]:
-        """Call out to Prediction Guard's embedding endpoint for embedding multiple images.
+        """
+        Call out to Prediction Guard's embedding endpoint for embedding multiple images.
 
         Args:
-            images: A list of images to embed. Supports image file paths, image URLs, data URIs, and base64 encoded images.
+            images: A list of images to embed.
+            Supports image file paths, image URLs, data URIs, and base64 encoded images.
 
         Returns:
             Embeddings for the images.
@@ -157,7 +156,8 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
 
 
     def embed_image_text(self, inputs: List[Dict[str, str]]) -> List[float]:
-        """Call out to Prediction Guard's embedding endpoint for embedding an image and text.
+        """
+        Call out to Prediction Guard embeddings for embedding an image and text.
 
         Args:
             inputs: A list of dictionaries containing the text and images to embed.
