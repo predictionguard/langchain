@@ -150,6 +150,10 @@ if TYPE_CHECKING:
     from langchain_community.chat_models.promptlayer_openai import (
         PromptLayerChatOpenAI,
     )
+    from langchain_community.chat_models.sambanova import (
+        ChatSambaNovaCloud,
+        ChatSambaStudio,
+    )
     from langchain_community.chat_models.snowflake import (
         ChatSnowflakeCortex,
     )
@@ -215,6 +219,8 @@ __all__ = [
     "ChatPerplexity",
     "ChatPredictionGuard",
     "ChatPremAI",
+    "ChatSambaNovaCloud",
+    "ChatSambaStudio",
     "ChatSparkLLM",
     "ChatSnowflakeCortex",
     "ChatTongyi",
@@ -273,6 +279,8 @@ _module_lookup = {
     "ChatOllama": "langchain_community.chat_models.ollama",
     "ChatOpenAI": "langchain_community.chat_models.openai",
     "ChatPerplexity": "langchain_community.chat_models.perplexity",
+    "ChatSambaNovaCloud": "langchain_community.chat_models.sambanova",
+    "ChatSambaStudio": "langchain_community.chat_models.sambanova",
     "ChatSnowflakeCortex": "langchain_community.chat_models.snowflake",
     "ChatSparkLLM": "langchain_community.chat_models.sparkllm",
     "ChatTongyi": "langchain_community.chat_models.tongyi",
