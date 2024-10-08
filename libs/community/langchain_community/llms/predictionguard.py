@@ -81,7 +81,7 @@ class PredictionGuard(LLM):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the api_key and python package exists in environment."""
         pg_api_key = get_from_dict_or_env(
-                values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
+            values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
         )
 
         try:
@@ -109,7 +109,7 @@ class PredictionGuard(LLM):
         """Return type of llm."""
         return "predictionguard"
 
-    def _get_parameters(self, **kwargs) -> Dict[str, Any]:
+    def _get_parameters(self, **kwargs: Any) -> Dict[str, Any]:
         # input kwarg conflicts with LanguageModelInput on BaseChatModel
         input = kwargs.pop("predictionguard_input", self.predictionguard_input)
         output = kwargs.pop("predictionguard_output", self.predictionguard_output)
@@ -120,8 +120,12 @@ class PredictionGuard(LLM):
                 "temperature": self.temperature,
                 "top_p": self.top_p,
                 "top_k": self.top_k,
-                "input": input.model_dump() if isinstance(input, BaseModel) else input,
-                "output": output.model_dump() if isinstance(output, BaseModel) else output,
+                "input": (
+                    input.model_dump() if isinstance(input, BaseModel) else input
+                ),
+                "output": (
+                    output.model_dump() if isinstance(output, BaseModel) else output
+                ),
             },
             **kwargs,
         }

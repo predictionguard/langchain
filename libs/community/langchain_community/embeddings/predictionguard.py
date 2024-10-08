@@ -24,7 +24,7 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
                                     )
     """
 
-    client: Any #: :meta private:
+    client: Any  #: :meta private:
     """Prediction Guard Client"""
 
     model: Optional[str] = "bridgetower-large-itm-mlm-itc"
@@ -41,7 +41,7 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
     def validate_environment(cls, values: Dict) -> Dict:
         """Validate that the api_key and python package exists in environment."""
         pg_api_key = get_from_dict_or_env(
-                values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
+            values, "predictionguard_api_key", "PREDICTIONGUARD_API_KEY"
         )
 
         try:
@@ -72,15 +72,10 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
 
         inputs = []
         for text in texts:
-            input = {
-                "text": text
-            }
+            input = {"text": text}
             inputs.append(input)
 
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=inputs
-        )
+        response = self.client.embeddings.create(model=self.model, input=inputs)
 
         res = []
         indx = 0
@@ -93,7 +88,6 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
 
         return res
 
-
     def embed_query(self, text: str) -> List[float]:
         """Call out to Prediction Guard's embedding endpoint for embedding query text.
 
@@ -104,19 +98,11 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
             Embeddings for the text.
         """
 
-        inputs = [
-            {
-                "text": text
-            }
-        ]
+        inputs = [{"text": text}]
 
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=inputs
-        )
+        response = self.client.embeddings.create(model=self.model, input=inputs)
 
         return response["data"][0]["embedding"]
-
 
     def embed_images(self, images: List[str]) -> List[float]:
         """
@@ -132,16 +118,11 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
 
         inputs = []
         for image in images:
-            input = {
-                "image": image
-            }
+            input = {"image": image}
 
             inputs.append(input)
 
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=inputs
-        )
+        response = self.client.embeddings.create(model=self.model, input=inputs)
 
         res = []
         indx = 0
@@ -154,7 +135,6 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
 
         return res
 
-
     def embed_image_text(self, inputs: List[Dict[str, str]]) -> List[float]:
         """
         Call out to Prediction Guard embeddings for embedding an image and text.
@@ -166,10 +146,7 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
             Embeddings for the text and images.
         """
 
-        response = self.client.embeddings.create(
-            model=self.model,
-            input=inputs
-        )
+        response = self.client.embeddings.create(model=self.model, input=inputs)
 
         res = []
         indx = 0
