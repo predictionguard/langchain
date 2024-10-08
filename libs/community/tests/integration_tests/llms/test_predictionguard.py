@@ -15,9 +15,7 @@ def test_predictionguard_invoke() -> None:
 def test_predictionguard_pii() -> None:
     llm = PredictionGuard(
         model="Hermes-2-Pro-Llama-3-8B",
-        predictionguard_input={
-            "pii": "block"
-        },
+        predictionguard_input={"pii": "block"},
         max_tokens=100,
         temperature=1.0,
     )

@@ -12,7 +12,10 @@ def test_predictionguard_call() -> None:
     )
 
     messages = [
-        ("system", "You are a helpful chatbot",),
+        (
+            "system",
+            "You are a helpful chatbot",
+        ),
         ("human", "Tell me a joke."),
     ]
 
@@ -22,7 +25,10 @@ def test_predictionguard_call() -> None:
 
 def test_predictionguard_pii() -> None:
     chat = ChatPredictionGuard(
-        model="Hermes-2-Pro-Llama-3-8B", predictionguard_input={"pii": "block",},
+        model="Hermes-2-Pro-Llama-3-8B",
+        predictionguard_input={
+            "pii": "block",
+        },
         max_tokens=100,
         temperature=1.0,
     )
