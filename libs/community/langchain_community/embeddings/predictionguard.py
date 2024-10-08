@@ -24,7 +24,7 @@ class PredictionGuardEmbeddings(BaseModel, Embeddings):
                                     )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
     """Prediction Guard Client"""
 
     model: Optional[str] = "bridgetower-large-itm-mlm-itc"

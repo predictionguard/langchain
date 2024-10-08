@@ -42,7 +42,7 @@ def test_predictionguard_embeddings_images() -> None:
     ]
     output = embeddings.embed_images(image)
     assert len(output) == 1
-    assert len(output[0]) > 2
+    assert type(output[0][0]) is float
 
 
 def test_predictionguard_embeddings_images_multiple() -> None:
@@ -54,8 +54,8 @@ def test_predictionguard_embeddings_images_multiple() -> None:
     ]
     output = embeddings.embed_images(images)
     assert len(output) == 2
-    assert len(output[0]) > 2
-    assert len(output[1]) > 2
+    assert type(output[0][0]) is float
+    assert type(output[1][0]) is float
 
 
 def test_predictionguard_embeddings_image_text() -> None:
@@ -69,7 +69,7 @@ def test_predictionguard_embeddings_image_text() -> None:
     ]
     output = embeddings.embed_image_text(inputs)
     assert len(output) == 1
-    assert len(output[0]) > 2
+    assert type(output[0][0]) is float
 
 
 def test_predictionguard_embeddings_image_text_multiple() -> None:
@@ -87,5 +87,5 @@ def test_predictionguard_embeddings_image_text_multiple() -> None:
     ]
     output = embeddings.embed_image_text(inputs)
     assert len(output) == 2
-    assert len(output[0]) > 2
-    assert len(output[1]) > 2
+    assert type(output[0][0]) is float
+    assert type(output[1][0]) is float

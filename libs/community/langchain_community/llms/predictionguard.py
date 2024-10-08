@@ -11,26 +11,6 @@ from langchain_community.llms.utils import enforce_stop_tokens
 logger = logging.getLogger(__name__)
 
 
-class CompletionInput(BaseModel):
-    """Options to affect the input of the request."""
-
-    block_prompt_injection: Optional[bool] = None
-    """Set to true to detect prompt injection attacks."""
-    pii: Optional[str] = None
-    """Set to either 'block' or 'replace'."""
-    pii_replace_method: Optional[str] = None
-    """Set to either 'random', 'fake', 'category', 'mask'."""
-
-
-class CompletionOutput(BaseModel):
-    """Options to affect the output of the response."""
-
-    factuality: Optional[bool] = None
-    """Set to true to turn on factuality processing."""
-    toxicity: Optional[bool] = None
-    """Set to true to turn on toxicity processing."""
-
-
 class PredictionGuard(LLM):
     """Prediction Guard large language models.
 
@@ -47,7 +27,7 @@ class PredictionGuard(LLM):
             )
     """
 
-    client: Any  #: :meta private:
+    client: Any = None #: :meta private:
 
     model: Optional[str] = "Hermes-2-Pro-Llama-3-8B"
     """Model name to use."""
@@ -66,10 +46,10 @@ class PredictionGuard(LLM):
 
     stop: Optional[List[str]] = None
 
-    predictionguard_input: Optional[CompletionInput] = None
+    predictionguard_input: Optional[Dict[str, str]] = None
     """The input check to run over the prompt before sending to the LLM."""
 
-    predictionguard_output: Optional[CompletionOutput] = None
+    predictionguard_output: Optional[Dict[str, str]] = None
     """The output check to run the LLM output against."""
 
     predictionguard_api_key: Optional[str] = None
