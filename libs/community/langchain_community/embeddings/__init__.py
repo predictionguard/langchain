@@ -188,6 +188,9 @@ if TYPE_CHECKING:
     from langchain_community.embeddings.premai import (
         PremAIEmbeddings,
     )
+    from langchain_community.embeddings.predictionguard import (
+        PredictionGuardEmbeddings,
+    )
     from langchain_community.embeddings.sagemaker_endpoint import (
         SagemakerEndpointEmbeddings,
     )
