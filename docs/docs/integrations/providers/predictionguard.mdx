@@ -15,10 +15,30 @@ pip install predictionguard
 ## Prediction Guard Langchain Integrations
 |API|Description|Endpoint Docs|Import|Example Usage|
 |---|---|---|---|---|
+|Chat|Build Chat Bots|[Chat](https://docs.predictionguard.com/api-reference/api-reference/chat-completions)|`from langchain_community.chat_models.predictionguard import ChatPredictionGuard`|[predictionguard.ipynb](/docs/integrations/chat/predictionguard)|
 |Completions|Generate Text|[Completions](https://docs.predictionguard.com/api-reference/api-reference/completions)|`from langchain_community.llms.predictionguard import PredictionGuard`|[predictionguard.ipynb](/docs/integrations/llms/predictionguard)|
 |Text Embedding|Embed String to Vectores|[Embeddings](https://docs.predictionguard.com/api-reference/api-reference/embeddings)|`from langchain_community.embeddings.predictionguard import PredictionGuardEmbeddings`|[predictionguard.ipynb](/docs/integrations/text_embedding/predictionguard)|
 
 ## Getting Started
+
+## Chat Models
+
+### Prediction Guard Chat
+
+See a [usage example](/docs/integrations/chat/predictionguard)
+
+```python
+from langchain_community.chat_models.predictionguard import ChatPredictionGuard
+```
+
+#### Usage
+
+```python
+# If predictionguard_api_key is not passed, default behavior is to use the `PREDICTIONGUARD_API_KEY` environment variable.
+chat = ChatPredictionGuard(model="Hermes-2-Pro-Llama-3-8B")
+
+chat.invoke("Tell me a joke")
+```
 
 ## Embedding Models
 
@@ -38,7 +58,6 @@ embeddings = PredictionGuardEmbeddings(model="bridgetower-large-itm-mlm-itc")
 text = "This is an embedding example."
 output = embeddings.embed_query(text)
 ```
-
 
 
 ## LLMs
