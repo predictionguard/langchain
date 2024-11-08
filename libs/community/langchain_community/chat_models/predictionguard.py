@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -54,7 +54,7 @@ class ChatPredictionGuard(BaseChatModel):
 
     stop: Optional[List[str]] = None
 
-    predictionguard_input: Optional[Dict[str, bool]] = None
+    predictionguard_input: Optional[Dict[str, Union[str, bool]]] = None
     """The input check to run over the prompt before sending to the LLM."""
 
     predictionguard_output: Optional[Dict[str, bool]] = None
