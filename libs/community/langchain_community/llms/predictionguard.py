@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @deprecated(
     since="0.3.28",
     removal="1.0",
-    alternative_import="langchain_predictionguard.PredictionGuard"
+    alternative_import="langchain_predictionguard.PredictionGuard",
 )
 class PredictionGuard(LLM):
     """Prediction Guard large language models.
